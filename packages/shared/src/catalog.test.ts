@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LEVELS, TOWERS, ENEMIES, ACHIEVEMENTS, PETS } from './catalog';
+import { LEVELS, ACHIEVEMENTS, PETS } from './catalog';
 import { TOWERS as BAL_TOWERS, ENEMIES as BAL_ENEMIES } from './balance';
 
 describe('shared catalog', () => {

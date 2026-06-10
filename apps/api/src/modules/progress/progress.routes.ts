@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { requireAuth } from '../../shared/infrastructure/authMiddleware';
 import { HttpError } from '../../app/errorHandler';
@@ -42,7 +43,7 @@ progressRouter.post('/run', requireAuth, async (req, res, next) => {
     const level = LEVELS.find((l) => l.id === body.levelId);
     if (!level) throw new HttpError(404, 'LEVEL_NOT_FOUND', 'Unknown level');
 
-    let xpGain = XP_REWARDS.levelComplete;
+    let xpGain: number = XP_REWARDS.levelComplete;
     if (!body.won) xpGain = Math.floor(xpGain * 0.4);
     xpGain += body.killedEnemies * XP_REWARDS.enemyKill;
 
@@ -70,7 +71,9 @@ progressRouter.post('/run', requireAuth, async (req, res, next) => {
         bestScore: { set: body.score },
         attempts: { increment: 1 },
         completedAt: body.won ? new Date() : undefined,
-        stars: { set: body.won ? Math.max(1, Math.min(3, Math.ceil(body.score / 1000))) : undefined },
+        stars: {
+          set: body.won ? Math.max(1, Math.min(3, Math.ceil(body.score / 1000))) : undefined,
+        },
       },
       create: {
         userId: user.id,
@@ -99,7 +102,7 @@ progressRouter.post('/run', requireAuth, async (req, res, next) => {
         lostLives: body.lostLives,
         durationSec: body.durationSec,
         seed: body.seed,
-        payload: body.payload,
+        payload: body.payload as Prisma.InputJsonValue,
       },
     });
 
@@ -112,6 +115,7 @@ progressRouter.post('/run', requireAuth, async (req, res, next) => {
 export function xpFor(level: number): number {
   // cumulative XP required to *reach* `level`
   let total = 0;
-  for (let l = 1; l < level; l++) total += Math.floor(XP_PER_LEVEL_BASE * Math.pow(XP_PER_LEVEL_GROWTH, l - 1));
+  for (let l = 1; l < level; l++)
+    total += Math.floor(XP_PER_LEVEL_BASE * Math.pow(XP_PER_LEVEL_GROWTH, l - 1));
   return total;
 }

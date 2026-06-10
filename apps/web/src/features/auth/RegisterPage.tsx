@@ -18,7 +18,9 @@ export function RegisterPage() {
     try {
       await register(email, username, password);
       nav('/');
-    } catch {/* */}
+    } catch {
+      /* */
+    }
   };
 
   return (
@@ -34,7 +36,10 @@ export function RegisterPage() {
             {error && <div className="text-danger text-sm">{error}</div>}
             <Button disabled={isLoading}>{isLoading ? 'Creando…' : 'Crear cuenta'}</Button>
             <div className="text-sm text-muted text-center">
-              ¿Ya tienes cuenta? <Link to="/login" className="underline">Entrar</Link>
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" className="underline">
+                Entrar
+              </Link>
             </div>
           </form>
         </Panel>
@@ -43,13 +48,22 @@ export function RegisterPage() {
   );
 }
 
-function Field({ label, ...rest }: { label: string } & React.InputHTMLAttributes<HTMLInputElement> & { onChange: (v: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  ...rest
+}: { label: string; value: string; onChange: (v: string) => void } & Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange'
+>) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-xs text-muted uppercase tracking-wider">{label}</span>
       <input
         {...rest}
-        onChange={(e) => rest.onChange(e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-accent2"
       />
     </label>
