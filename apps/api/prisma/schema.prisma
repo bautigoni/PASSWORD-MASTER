@@ -1,0 +1,172 @@
+// PASSWORD MASTER — Prisma schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum Environment {
+  CITY
+  SCHOOL
+  BANK
+  HOSPITAL
+  DATACENTER
+}
+
+enum PetKindEnum {
+  BYTE
+  FIREWALL_DOG
+  CYBER_OWL
+  PASSWORD_PANDA
+  HACK_HUNTER
+}
+
+model User {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  username          String           @unique
+  passwordHash      String
+  role              Role             @default(STUDENT)
+  avatar            String?
+  level             Int              @default(1)
+  xp                Int              @default(0)
+  coins             Int              @default(200)
+  gems              Int              @default(0)
+  equippedPet       PetKindEnum?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  refreshTokens     RefreshToken[]
+  progress          UserProgress[]
+  achievements      UserAchievement[]
+  runs              Run[]
+  pets              UserPet[]
+  ownedClasses      ClassRoom[]      @relation("TeacherClasses")
+  enrollments       Enrollment[]
+  multiplayerStats  MultiplayerStats?
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model UserProgress {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  levelId       String
+  stars         Int         @default(0)
+  bestScore     Int         @default(0)
+  attempts      Int         @default(0)
+  completedAt   DateTime?
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, levelId])
+}
+
+model Achievement {
+  id          String   @id // string key, e.g. guardian_novato
+  name        String
+  description String
+  rewardCoins Int      @default(0)
+  rewardGems  Int      @default(0)
+  rewardXp    Int      @default(0)
+  icon        String
+
+  unlocks     UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  claimedAt     DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model UserPet {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      PetKindEnum
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, kind])
+}
+
+model Run {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  levelId         String
+  environment     Environment
+  mode            String      // 'campaign' | 'sandbox' | 'challenge' | 'coop' | 'versus'
+  score           Int         @default(0)
+  won             Boolean     @default(false)
+  killedEnemies   Int         @default(0)
+  lostLives       Int         @default(0)
+  durationSec     Int         @default(0)
+  seed            String
+  payload         Json
+  createdAt       DateTime    @default(now())
+}
+
+model MultiplayerRoom {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  hostId      String
+  mode        String   // 'coop' | 'versus'
+  levelId     String
+  status      String   @default("open") // open | playing | finished
+  seed        String
+  createdAt   DateTime @default(now())
+  finishedAt  DateTime?
+}
+
+model ClassRoom {
+  id        String       @id @default(cuid())
+  name      String
+  joinCode  String       @unique
+  teacherId String
+  teacher   User         @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  classId    String
+  class      ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+
+  @@unique([classId, userId])
+}
+
+model MultiplayerStats {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  elo       Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
